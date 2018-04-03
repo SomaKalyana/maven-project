@@ -18,5 +18,22 @@ pipeline {
 
 			}
 		}
+		stage('Deplo to Prod'){
+			steps{
+				timeout(time:5, unit:DAYS){
+					input message 'Approve PRODUCTIOn deployment'	
+				}
+
+				build job: 'deploy-to-prod'
+			}
+			post {
+				success {
+					echo 'Code deployed to Production'
+				}
+				failure {
+					echo 'Deploymnet failed'
+				}
+			}
+		}
 	}
 }
