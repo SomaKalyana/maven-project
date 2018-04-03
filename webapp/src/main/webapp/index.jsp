@@ -1,1 +1,1 @@
-Hello, World from Tomcat Server Staging!
+Hello, World! Version 2
