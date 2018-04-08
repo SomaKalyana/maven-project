@@ -1,6 +1,16 @@
 pipeline {
 	agent any
-	stages{
+
+	parameters {
+		string(name: 'tomcat_dev', defaultValue: '52.41.187.4', description: 'Staging Server')
+		string(name: 'tomcat_prod', defaultValue: '54.213.253.39', description: 'Production Server')
+	}
+
+	triggers {
+		pollSCM('* * * * *')
+	}
+
+	stages {
 		stage('Build') {
 			steps{
 				bat 'mvn clean package'
@@ -12,29 +22,20 @@ pipeline {
 				}
 			}
 		}
-		stage('Deploy to Stage'){
-			steps{
-				build job: 'deploy-to-staging'
 
-			}
-		}
-		stage('Deploy to Prod'){
-			steps{
-				timeout(time:5, unit:'DAYS'){
-					input message: 'Approve PRODUCTION deployment?'	
+		stage ('Deployment') {
+			parellel {
+				stage('Deploy to Staging') {
+					steps {
+						sh "scp -i tomcat-demo.pem **/target/*.war ec2-user@${params.tomcat_dev}:/var/lib/tomcat7/webapps"
+					}
 				}
-
-				build job: 'deploy-to-prod'
-			}
-
-			post {
-				success {
-					echo 'Code deployed to Production'
+				stage('Deploy to Production') {
+					steps {
+						sh "scp -i tomcat-demo.pem **/target/*.war ec2-user@${params.tomcat_prod}:/var/lib/tomcat7/webapps"
+					}
 				}
-
-				failure {
-					echo 'Deployment failed'
-				}
+					
 			}
 		}
 	}
